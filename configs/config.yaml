@@ -1,0 +1,63 @@
+# k8s-mcp-server 配置
+# 安全第一原则：部署后默认只开只读；需要写能力时手动打开，
+# 并确认领域层黑名单/白名单/副本上限均已配置。
+
+server:
+  listen: ":8080"
+  # 本地调试用 kubeconfig；容器内（InClusterConfig）留空
+  kubeconfig: ""
+  # MCP 接入鉴权：Bearer Token -> 身份（写入审计日志）
+  auth_tokens:
+    - token: "change-me-bearer-token"
+      name: "copilot-default"
+    # - token: "another-token"
+    #   name: "dify-agent"
+
+permission:
+  # 全局只读开关：true 时所有写工具不注册（LLM 看不到），
+  # 且领域层 RiskControlService 二次拦截
+  read_only_mode: true
+  # 系统命名空间黑名单：任何变更操作都禁止
+  namespace_blacklist:
+    - kube-system
+    - kube-public
+    - kube-node-lease
+  # 允许变更的资源类型（v1 仅 Deployment）
+  mutation_allowed_kinds:
+    - deployment
+  # 镜像仓库白名单（patch_deployment_image 用）
+  # 支持前缀匹配：docker.io/ourteam 允许该组织下所有镜像
+  image_whitelist:
+    - docker.io/ourteam
+  # 副本数上下限（scale_deployment 用）
+  scale_limit:
+    max_replicas: 10
+    min_replicas: 0
+  # 日志拉取保护：防 LLM 拉全量日志打爆内存
+  log_limits:
+    max_tail_lines: 1000
+    max_bytes: 5242880   # 5MiB
+  # 单次 list 返回给 LLM 的最大条数
+  list_limit: 50
+
+cache:
+  # Informer 本地缓存：list/get 走缓存，降低 apiserver 压力
+  enable: true
+  resync_hours: 2
+
+rate_limit:
+  # 工具调用限流（按身份）：防 LLM 循环疯狂调用
+  enable: true
+  qps: 5
+  burst: 10
+
+audit:
+  enable: true
+  storage: log          # log | redis
+  log_file: ""          # 空 = 写 stdout（容器内推荐）
+  # redis_addr: "redis:6379"
+  # redis_key: "k8s-mcp:audit"
+
+approve:
+  # 高危操作人工审批开关（Phase3 预留；当前高危操作一律直接拒绝）
+  enable: false

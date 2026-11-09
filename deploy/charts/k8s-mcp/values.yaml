@@ -1,0 +1,114 @@
+# k8s-mcp Helm values
+# 安全默认：只读模式；需要写能力时把 permission.readOnlyMode 改为 false
+# 并按需放开 rbac.mutation.enabled。
+
+replicaCount: 1
+
+image:
+  repository: registry.example.com/ourteam/k8s-mcp-server
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+rbac:
+  # 只读 ClusterRole（pod/deployment/service/configmap/event/node，get/list/watch）
+  read:
+    enabled: true
+    resources:
+      - pods
+      - pods/log
+      - deployments
+      - services
+      - configmaps
+      - events
+      - namespaces
+      - nodes
+  # 变更 ClusterRole（create/update/patch，仅 deployment；不含 pods/exec）
+  mutation:
+    enabled: false   # 与 permission.readOnlyMode 保持一致
+
+server:
+  listen: ":8080"
+  kubeconfig: ""
+  # 强烈建议在生产用 --set-string server.authTokens[0].token=... 覆盖
+  authTokens:
+    - token: "change-me-bearer-token"
+      name: "copilot-default"
+
+permission:
+  readOnlyMode: true
+  namespaceBlacklist:
+    - kube-system
+    - kube-public
+    - kube-node-lease
+  mutationAllowedKinds:
+    - deployment
+  imageWhitelist:
+    - docker.io/ourteam
+  scaleLimit:
+    maxReplicas: 10
+    minReplicas: 0
+  logLimits:
+    maxTailLines: 1000
+    maxBytes: 5242880
+  listLimit: 50
+
+cache:
+  enable: true
+  resyncHours: 2
+
+rateLimit:
+  enable: true
+  qps: 5
+  burst: 10
+
+audit:
+  enable: true
+  storage: log
+  logFile: ""
+  redisAddr: ""
+  redisKey: "k8s-mcp:audit"
+
+approve:
+  enable: false
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# /tmp 需要可写（readOnlyRootFilesystem=true 时）
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

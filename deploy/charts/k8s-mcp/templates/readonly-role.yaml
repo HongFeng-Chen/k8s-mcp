@@ -1,0 +1,29 @@
+{{- if .Values.rbac.read.enabled }}
+# 只读 ClusterRole：诊断核心能力（get/list/watch），默认启用
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "k8s-mcp.fullname" . }}-readonly
+  labels:
+    {{- include "k8s-mcp.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources:
+      {{- toYaml .Values.rbac.read.resources | nindent 6 }}
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "k8s-mcp.fullname" . }}-readonly
+  labels:
+    {{- include "k8s-mcp.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "k8s-mcp.fullname" . }}-readonly
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "k8s-mcp.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

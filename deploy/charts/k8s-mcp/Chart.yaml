@@ -1,0 +1,11 @@
+apiVersion: v2
+name: k8s-mcp
+description: MCP Server addon for controlled LLM access to Kubernetes (DDD layered)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - mcp
+  - llm
+  - kubernetes
+  - addon

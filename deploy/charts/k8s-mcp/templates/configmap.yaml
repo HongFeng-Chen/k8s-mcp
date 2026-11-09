@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-mcp.fullname" . }}-config
+  labels:
+    {{- include "k8s-mcp.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    server:
+      listen: {{ .Values.server.listen | quote }}
+      kubeconfig: {{ .Values.server.kubeconfig | quote }}
+      auth_tokens:
+        {{- range .Values.server.authTokens }}
+        - token: {{ .token | quote }}
+          name: {{ .name | quote }}
+        {{- end }}
+
+    permission:
+      read_only_mode: {{ .Values.permission.readOnlyMode }}
+      namespace_blacklist:
+        {{- range .Values.permission.namespaceBlacklist }}
+        - {{ . }}
+        {{- end }}
+      mutation_allowed_kinds:
+        {{- range .Values.permission.mutationAllowedKinds }}
+        - {{ . }}
+        {{- end }}
+      image_whitelist:
+        {{- range .Values.permission.imageWhitelist }}
+        - {{ . }}
+        {{- end }}
+      scale_limit:
+        max_replicas: {{ .Values.permission.scaleLimit.maxReplicas }}
+        min_replicas: {{ .Values.permission.scaleLimit.minReplicas }}
+      log_limits:
+        max_tail_lines: {{ .Values.permission.logLimits.maxTailLines }}
+        max_bytes: {{ .Values.permission.logLimits.maxBytes }}
+      list_limit: {{ .Values.permission.listLimit }}
+
+    cache:
+      enable: {{ .Values.cache.enable }}
+      resync_hours: {{ .Values.cache.resyncHours }}
+
+    rate_limit:
+      enable: {{ .Values.rateLimit.enable }}
+      qps: {{ .Values.rateLimit.qps }}
+      burst: {{ .Values.rateLimit.burst }}
+
+    audit:
+      enable: {{ .Values.audit.enable }}
+      storage: {{ .Values.audit.storage | quote }}
+      log_file: {{ .Values.audit.logFile | quote }}
+      redis_addr: {{ .Values.audit.redisAddr | quote }}
+      redis_key: {{ .Values.audit.redisKey | quote }}
+
+    approve:
+      enable: {{ .Values.approve.enable }}

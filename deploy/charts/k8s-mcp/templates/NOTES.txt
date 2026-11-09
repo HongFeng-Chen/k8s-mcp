@@ -1,0 +1,11 @@
+k8s-mcp-server 已部署（{{ .Release.Namespace }} 命名空间）。
+
+当前模式：{{ if .Values.permission.readOnlyMode }}只读（LLM 无任何写能力）{{ else }}受控变更（restart/scale/patch image 已开放，受黑名单/白名单/副本上限约束）{{ end }}
+
+集群内访问：
+  http://{{ include "k8s-mcp.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/mcp
+
+⚠️ 安全提醒：
+  1. 请立即用 --set-string server.authTokens[0].token=<随机token> 覆盖默认 Bearer Token；
+  2. MCP 端点仅限集群内/受信网络访问（如需对外暴露请加 Ingress + 网络策略/网关鉴权）；
+  3. 审计日志是排查 LLM 误操作的唯一凭证，确认 audit.enable=true。

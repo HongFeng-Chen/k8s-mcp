@@ -1,0 +1,29 @@
+{{- if .Values.rbac.mutation.enabled }}
+# 受控变更 ClusterRole：仅 deployment 的 create/update/patch；
+# 明确禁止 pods/exec、secrets 写、delete 类高危动词。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "k8s-mcp.fullname" . }}-mutation
+  labels:
+    {{- include "k8s-mcp.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "k8s-mcp.fullname" . }}-mutation
+  labels:
+    {{- include "k8s-mcp.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "k8s-mcp.fullname" . }}-mutation
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "k8s-mcp.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
