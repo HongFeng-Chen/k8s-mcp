@@ -1,0 +1,2 @@
+2026/11/10 23:48:03 INFO rate limit enabled qps=5 burst=10
+2026/11/10 23:48:03 INFO k8s-mcp-server starting listen=:8080 mode="read-write (controlled mutations enabled)" audit=log cache=true rate_limit=true
